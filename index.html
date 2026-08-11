@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dhaka City Bus Route Finder | Premium Edition</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/favicon-1.png">
+
+    <!-- Fonts: Inter + Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- External Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="css/design-tokens.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/map-polish.css">
+</head>
+
+<body>
+    <!-- App Root -->
+    <div id="app-root">
+
+        <!-- FULL SCREEN MAP LAYER (z-0) -->
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+
+        <!-- FLOATING CONTROL PIN (z-100) -->
+        <!-- Main Search Panel -->
+        <div class="floating-panel search-panel">
+            <!-- Drag Handle for Mobile -->
+            <div class="drag-handle-bar"></div>
+
+            <div class="panel-header">
+                <div class="brand-badge">
+                    <i class="fas fa-bus-simple"></i>
+                    <span>DhakaBus</span>
+                </div>
+
+                <!-- Controls -->
+                <div class="panel-controls">
+                    <button id="btn-reset" class="icon-btn" title="Reset Map">
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                    <button id="btn-app-info" class="icon-btn" title="App Info">
+                        <i class="fas fa-circle-info"></i>
+                    </button>
+                    <!-- Toggle Button Moved to Right -->
+                    <button class="panel-toggle-btn" id="toggle-search-panel" title="Minimize/Expand">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <h1 class="hero-title">Where to?</h1>
+
+            <form id="routeForm" class="glass-form">
+                <div class="input-group">
+                    <div class="input-icon start">
+                        <i class="fas fa-circle-dot"></i>
+                    </div>
+                    <select id="startStop" class="glass-select" required>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <div class="input-group">
+                    <div class="input-icon end">
+                        <i class="fas fa-location-dot"></i>
+                    </div>
+                    <select id="endStop" class="glass-select" required>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary-glass">
+                    <span class="btn-content">
+                        Find Route <i class="fas fa-arrow-right-long"></i>
+                    </span>
+                    <div class="btn-glow"></div>
+                </button>
+            </form>
+        </div>
+
+        <!-- RESULTS OVERLAY (z-200) - Initially Hidden -->
+        <div id="results-panel" class="floating-panel results-panel hidden">
+            <!-- Drag Handle for Mobile -->
+            <div class="drag-handle-bar"></div>
+
+            <div class="results-header">
+                <button class="panel-toggle-btn" id="toggle-results-panel" title="Minimize/Expand">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="route-meta">
+                    <span class="meta-label">Total Stops</span>
+                    <strong id="totalStops" class="meta-value">0</strong>
+                </div>
+                <div class="route-meta">
+                    <span class="meta-label">Transfers</span>
+                    <strong id="totalTransfers" class="meta-value">0</strong>
+                </div>
+                <button id="btn-close-results" class="icon-btn close-results">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div id="routeInstructions" class="results-content custom-scrollbar">
+                <!-- Route cards injected here -->
+            </div>
+        </div>
+
+        <!-- LOADING OVERLAY -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="cyber-spinner">
+                <div class="spinner-core"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <p class="loading-text">Calculating optimal path...</p>
+        </div>
+
+        <!-- WELCOME NOTICE MODAL -->
+        <div id="welcomeNotice" class="welcome-notice" style="display: none;">
+            <div class="welcome-notice-content glass-modal">
+                <button class="welcome-notice-close" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="welcome-notice-header">
+                    <div class="welcome-icon">
+                        <i class="fas fa-bus"></i>
+                    </div>
+                    <h4>Welcome to Bus Route Finder!</h4>
+                    <p class="welcome-intro">Your journey planning companion in Dhaka City</p>
+                </div>
+                <div class="welcome-notice-body">
+                    <ul class="welcome-features">
+                        <li>
+                            <i class="fas fa-location-dot"></i>
+                            <span>Select your start and end locations</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-magnifying-glass"></i>
+                            <span>Discover the best bus routes</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-location-dot"></i>
+                            <span>Visualize your journey on the interactive map</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-list-check"></i>
+                            <span>Get detailed step-by-step instructions</span>
+                        </li>
+                    </ul>
+                    <div class="welcome-notice-tip">
+                        <i class="fas fa-lightbulb"></i>
+                        <div class="tip-content">
+                            <strong>Pro Tip:</strong>
+                            <p>Select both start and end points to see the route on the map and get bus options!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- External Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <!-- Data & App Scripts -->
+    <script src="data/places.js"></script>
+    <script src="data/priorityBuses.js"></script>
+    <script src="js/BusRouteFinder.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
